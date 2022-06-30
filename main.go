@@ -7,25 +7,41 @@ import (
 )
 
 func main() {
-	dirs, err := os.ReadDir(".")
-	if err != nil {
-		fmt.Println(err.Error())
+	recurse("/Users/jeremy/Desktop/CE Project", -1)
+}
+
+func recurse(dirName string, depth int) {
+	depth++
+	if depth > 4 {
 		return
 	}
-	for i, e := range dirs {
-		fmt.Println(i, e.Name())
-		if e.IsDir() { // TODO should be recursive
-			os.Chdir(e.Name())
-			dirs1, err := os.ReadDir(".")
 
-			if err != nil {
-				fmt.Println(err.Error())
-				return
-			}
+	dirEntries, err := os.ReadDir(dirName)
+	if err != nil {
+		fmt.Println("Error: " + err.Error() + " Dir: " + dirName + " at depth " + strconv.Itoa(depth))
+	}
 
-			for j, f := range dirs1 {
-				fmt.Println(strconv.Itoa(i)+"."+strconv.Itoa(j), "_"+f.Name())
-			}
+	//files
+	for _, e := range dirEntries {
+		if !e.IsDir() {
+			fmt.Println(getIndent(depth), e.Name())
 		}
 	}
+
+	// directories
+	for _, f := range dirEntries {
+
+		if f.IsDir() {
+			fmt.Println(getIndent(depth), f.Name()+" (Dir)")
+			recurse(dirName+"/"+f.Name(), depth)
+		}
+	}
+}
+
+func getIndent(depth int) string {
+	indent := ""
+	for i := 0; i < depth; i++ {
+		indent += "-"
+	}
+	return indent
 }
