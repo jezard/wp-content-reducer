@@ -1,18 +1,37 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"strconv"
 )
 
 func main() {
-	recurse("/Users/jeremy/Desktop/CE Project", -1)
+
+	if len(os.Args) < 2 {
+		fmt.Println("Directory argument has not been provided")
+		return
+	}
+
+	cwd, _ := os.Getwd()
+	targetDir := os.Args[1]
+	maxDepth := flag.Int("depth", 0, "Maximum recursion levels")
+
+	err := os.Chdir(cwd + "/" + targetDir)
+
+	if err != nil {
+		cwd, _ := os.Getwd()
+		recurse(cwd, 0, *maxDepth)
+	} else {
+		fmt.Println("Directory argument is not a directory")
+	}
 }
 
-func recurse(dirName string, depth int) {
+func recurse(dirName string, depth int, maxDepth int) {
 	depth++
-	if depth > 4 {
+	//fmt.Println(depth, maxDepth)
+	if maxDepth > 0 && depth > maxDepth {
 		return
 	}
 
@@ -21,7 +40,7 @@ func recurse(dirName string, depth int) {
 		fmt.Println("Error: " + err.Error() + " Dir: " + dirName + " at depth " + strconv.Itoa(depth))
 	}
 
-	//files
+	// files
 	for _, e := range dirEntries {
 		if !e.IsDir() {
 			fmt.Println(getIndent(depth), e.Name())
@@ -33,7 +52,7 @@ func recurse(dirName string, depth int) {
 
 		if f.IsDir() {
 			fmt.Println(getIndent(depth), f.Name()+" (Dir)")
-			recurse(dirName+"/"+f.Name(), depth)
+			recurse(dirName+"/"+f.Name(), depth, maxDepth)
 		}
 	}
 }
