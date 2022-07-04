@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -22,15 +24,33 @@ func main() {
 
 	if err != nil {
 		cwd, _ := os.Getwd()
-		recurse(cwd, 0, *maxDepth)
+
+		f, err := os.Create("queue.csv")
+		if err != nil {
+			fmt.Println("Error: Could not open queue file.")
+		}
+
+		defer f.Close()
+
+		w := bufio.NewWriter(f)
+		fmt.Fprint(w, "Filepath,Status,Thread\r\n")
+
+		// let's begin!
+		recurse(cwd, 0, *maxDepth, w)
+
+		err = w.Flush()
+
+		if err != nil {
+			fmt.Println("Couldn't write queue from buffer to file: ", err)
+		}
 	} else {
 		fmt.Println("Directory argument is not a directory")
 	}
 }
 
-func recurse(dirName string, depth int, maxDepth int) {
+func recurse(dirName string, depth int, maxDepth int, w *bufio.Writer) {
 	depth++
-	//fmt.Println(depth, maxDepth)
+
 	if maxDepth > 0 && depth > maxDepth {
 		return
 	}
@@ -43,6 +63,8 @@ func recurse(dirName string, depth int, maxDepth int) {
 	// files
 	for _, e := range dirEntries {
 		if !e.IsDir() {
+			//filepath,status,thread
+			fmt.Fprint(w, filepath.FromSlash(dirName+"/"+e.Name())+",0,0\r\n")
 			fmt.Println(getIndent(depth), e.Name())
 		}
 	}
@@ -52,7 +74,7 @@ func recurse(dirName string, depth int, maxDepth int) {
 
 		if f.IsDir() {
 			fmt.Println(getIndent(depth), f.Name()+" (Dir)")
-			recurse(dirName+"/"+f.Name(), depth, maxDepth)
+			recurse(dirName+"/"+f.Name(), depth, maxDepth, w)
 		}
 	}
 }
