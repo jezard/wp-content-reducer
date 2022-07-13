@@ -11,6 +11,12 @@ import (
 	"strings"
 )
 
+type queueItem struct {
+	filePath      string
+	processedDate int
+	thread        int
+}
+
 // test usage go run . /Users/jeremy/Library/
 func main() {
 
@@ -59,6 +65,9 @@ func main() {
 			fmt.Println("Couldn't write queue from buffer to file: ", err)
 		}
 
+		// process queue
+		processQueue(csvPath + "/queue.csv")
+
 	}
 }
 
@@ -97,6 +106,26 @@ func recurse(dirName string, depth int, maxDepth int, w *bufio.Writer) {
 	}
 }
 
+// process the queue of images
+func processQueue(fileName string) {
+	readFile, err := os.Open(fileName)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	fs := bufio.NewScanner(readFile)
+
+	fs.Split(bufio.ScanLines)
+
+	for fs.Scan() {
+
+		fmt.Println(fs.Text())
+	}
+
+	readFile.Close()
+}
+
+// utility functions
 func getIndent(depth int) string {
 	indent := ""
 	for i := 0; i < depth; i++ {
