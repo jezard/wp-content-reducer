@@ -2,12 +2,10 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -36,7 +34,6 @@ func main() {
 	}
 
 	targetDir := os.Args[1]
-	maxDepth := flag.Int("depth", 0, "Maximum recursion levels")
 
 	err := os.Chdir(targetDir)
 
@@ -54,10 +51,10 @@ func main() {
 		defer f.Close()
 
 		w := bufio.NewWriter(f)
-		fmt.Fprint(w, "Filepath,Status,Thread\r\n")
+		fmt.Fprint(w, "Filepath|Status|Thread\r\n")
 
 		// let's begin!
-		recurse(cwd, 0, *maxDepth, w)
+		walkDir(cwd, w)
 
 		err = w.Flush()
 
@@ -71,39 +68,23 @@ func main() {
 	}
 }
 
-func recurse(dirName string, depth int, maxDepth int, w *bufio.Writer) {
-	depth++
+func walkDir(cwd string, w *bufio.Writer) error {
+	err := filepath.Walk(cwd,
+		func(path string, info os.FileInfo, err error) error {
 
-	if maxDepth > 0 && depth > maxDepth {
-		return
-	}
-
-	dirEntries, err := os.ReadDir(dirName)
-	if err != nil {
-		fmt.Println("Error: " + err.Error() + " Dir: " + dirName + " at depth " + strconv.Itoa(depth))
-	}
-
-	// files
-	for _, e := range dirEntries {
-		if !e.IsDir() {
-			m, _ := regexp.MatchString(".png|.jpeg|.jpg", strings.ToLower(e.Name()))
+			m, _ := regexp.MatchString(".png|.jpeg|.jpg", strings.ToLower(info.Name()))
 			if m {
 				//filepath,status,thread
-				fmt.Fprint(w, filepath.FromSlash("\""+dirName+"/"+e.Name())+"\",0,0\r\n")
-				// fmt.Println(getIndent(depth), e.Name()) // logging
+				fmt.Fprint(w, path+"|0|0\r\n")
 			}
 
-		}
-	}
-
-	// directories
-	for _, f := range dirEntries {
-
-		if f.IsDir() {
-			// fmt.Println(getIndent(depth), f.Name()+" (Dir)") // logging
-			recurse(dirName+"/"+f.Name(), depth, maxDepth, w)
-		}
-	}
+			if err != nil {
+				return err
+			}
+			fmt.Println(path, info.Size())
+			return nil
+		})
+	return err
 }
 
 // process the queue of images
@@ -119,17 +100,8 @@ func processQueue(fileName string) {
 
 	for fs.Scan() {
 
-		fmt.Println(fs.Text())
+		//fmt.Println(fs.Text())
 	}
 
 	readFile.Close()
-}
-
-// utility functions
-func getIndent(depth int) string {
-	indent := ""
-	for i := 0; i < depth; i++ {
-		indent += "-"
-	}
-	return indent
 }
