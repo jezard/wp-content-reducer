@@ -7,12 +7,13 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type queueItem struct {
 	filePath      string
-	processedDate int
-	thread        int
+	processedDate string
+	thread        string
 }
 
 // test usage go run . /Users/jeremy/Library/
@@ -51,7 +52,7 @@ func main() {
 		defer f.Close()
 
 		w := bufio.NewWriter(f)
-		fmt.Fprint(w, "Filepath|Status|Thread\r\n")
+		fmt.Fprint(w, "Filepath|ProcessedDate|Thread\r\n")
 
 		// let's begin!
 		walkDir(cwd, w)
@@ -81,7 +82,6 @@ func walkDir(cwd string, w *bufio.Writer) error {
 			if err != nil {
 				return err
 			}
-			fmt.Println(path, info.Size())
 			return nil
 		})
 	return err
@@ -99,8 +99,12 @@ func processQueue(fileName string) {
 	fs.Split(bufio.ScanLines)
 
 	for fs.Scan() {
+		item := strings.Split(fs.Text(), "|")
+		test := queueItem{item[0], item[1], item[2]}
+		test.processedDate = time.Now().String()
 
-		//fmt.Println(fs.Text())
+		fmt.Println(test.filePath, test.processedDate, test.thread)
+
 	}
 
 	readFile.Close()
