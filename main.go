@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
+	"strings"
 )
 
 // test usage go run . /Users/jeremy/Library/
 func main() {
+
 	const env = "dev"
 	var csvPath = ""
 
@@ -34,6 +37,7 @@ func main() {
 	if err != nil {
 		fmt.Println("Directory argument is not a directory: ", targetDir)
 	} else {
+		// create a list or queue file
 		cwd, _ := os.Getwd()
 
 		f, err := os.Create(csvPath + "/queue.csv")
@@ -54,6 +58,7 @@ func main() {
 		if err != nil {
 			fmt.Println("Couldn't write queue from buffer to file: ", err)
 		}
+
 	}
 }
 
@@ -72,9 +77,13 @@ func recurse(dirName string, depth int, maxDepth int, w *bufio.Writer) {
 	// files
 	for _, e := range dirEntries {
 		if !e.IsDir() {
-			//filepath,status,thread
-			fmt.Fprint(w, filepath.FromSlash("\""+dirName+"/"+e.Name())+"\",0,0\r\n")
-			fmt.Println(getIndent(depth), e.Name())
+			m, _ := regexp.MatchString(".png|.jpeg|.jpg", strings.ToLower(e.Name()))
+			if m {
+				//filepath,status,thread
+				fmt.Fprint(w, filepath.FromSlash("\""+dirName+"/"+e.Name())+"\",0,0\r\n")
+				// fmt.Println(getIndent(depth), e.Name()) // logging
+			}
+
 		}
 	}
 
@@ -82,7 +91,7 @@ func recurse(dirName string, depth int, maxDepth int, w *bufio.Writer) {
 	for _, f := range dirEntries {
 
 		if f.IsDir() {
-			fmt.Println(getIndent(depth), f.Name()+" (Dir)")
+			// fmt.Println(getIndent(depth), f.Name()+" (Dir)") // logging
 			recurse(dirName+"/"+f.Name(), depth, maxDepth, w)
 		}
 	}
