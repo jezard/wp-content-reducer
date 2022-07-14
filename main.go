@@ -7,13 +7,11 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 )
 
 type queueItem struct {
-	filePath      string
-	processedDate string
-	thread        string
+	filePath    string
+	isProcessed string
 }
 
 // test usage go run . /Users/jeremy/Library/
@@ -52,7 +50,6 @@ func main() {
 		defer f.Close()
 
 		w := bufio.NewWriter(f)
-		fmt.Fprint(w, "Filepath|ProcessedDate|Thread\r\n")
 
 		// let's begin!
 		walkDir(cwd, w)
@@ -65,7 +62,6 @@ func main() {
 
 		// process queue
 		processQueue(csvPath + "/queue.csv")
-
 	}
 }
 
@@ -76,7 +72,7 @@ func walkDir(cwd string, w *bufio.Writer) error {
 			m, _ := regexp.MatchString(".png|.jpeg|.jpg", strings.ToLower(info.Name()))
 			if m {
 				//filepath,status,thread
-				fmt.Fprint(w, path+"|0|0\r\n")
+				fmt.Fprint(w, path+"|0\r\n")
 			}
 
 			if err != nil {
@@ -89,23 +85,34 @@ func walkDir(cwd string, w *bufio.Writer) error {
 
 // process the queue of images
 func processQueue(fileName string) {
-	readFile, err := os.Open(fileName)
+
+	queueFile, err := os.OpenFile(fileName, os.O_RDWR, os.ModeAppend)
 
 	if err != nil {
 		fmt.Println(err)
 	}
-	fs := bufio.NewScanner(readFile)
+	fs := bufio.NewScanner(queueFile)
 
 	fs.Split(bufio.ScanLines)
 
+	pos := -1 // start position
+
 	for fs.Scan() {
-		item := strings.Split(fs.Text(), "|")
-		test := queueItem{item[0], item[1], item[2]}
-		test.processedDate = time.Now().String()
+		len := len(fs.Bytes())
+		pos += len
+		sa := strings.Split(fs.Text(), "|")
+		item := queueItem{sa[0], sa[1]}
 
-		fmt.Println(test.filePath, test.processedDate, test.thread)
+		// if not yet processed, process image
+		if item.isProcessed == "0" {
 
+			// processImage()!!! //
+
+			if true { // successfully processed, mark the entry done.
+				queueFile.WriteAt([]byte("1"), int64(pos))
+			}
+		}
+		pos += 2 // to account for the \r\n ?
 	}
-
-	readFile.Close()
+	queueFile.Close()
 }
