@@ -110,9 +110,8 @@ func processQueue(fileName string) {
 		// if not yet processed, process image
 		if item.isProcessed == "0" {
 
-			// processImage()!!! //
-
-			if true { // successfully processed, mark the entry done.
+			// processImage
+			if processImage(item.filePath) { // successfully processed, mark the entry done.
 				queueFile.WriteAt([]byte("1"), int64(pos))
 			}
 		}
