@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -39,25 +40,28 @@ func main() {
 	if err != nil {
 		fmt.Println("Directory argument is not a directory: ", targetDir)
 	} else {
-		// create a list or queue file
-		cwd, _ := os.Getwd()
+		// if the queue file does not exist, create it.
+		if _, err := os.Stat(csvPath + "/queue.csv"); errors.Is(err, os.ErrNotExist) {
+			// create a list or queue file
+			cwd, _ := os.Getwd()
 
-		f, err := os.Create(csvPath + "/queue.csv")
-		if err != nil {
-			fmt.Println("Error: Could not open queue file.")
-		}
+			f, err := os.Create(csvPath + "/queue.csv")
+			if err != nil {
+				fmt.Println("Error: Could not open queue file.")
+			}
 
-		defer f.Close()
+			defer f.Close()
 
-		w := bufio.NewWriter(f)
+			w := bufio.NewWriter(f)
 
-		// let's begin!
-		walkDir(cwd, w)
+			// let's begin!
+			walkDir(cwd, w)
 
-		err = w.Flush()
+			err = w.Flush()
 
-		if err != nil {
-			fmt.Println("Couldn't write queue from buffer to file: ", err)
+			if err != nil {
+				fmt.Println("Couldn't write queue from buffer to file: ", err)
+			}
 		}
 
 		// process queue
